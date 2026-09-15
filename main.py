@@ -1,16 +1,18 @@
 import os
 import secrets
 import time
+from datetime import datetime, timezone
 
 import duckdb
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from huggingface_hub import HfFileSystem
 from pydantic import BaseModel
 
 
 # ============================================================
-# CONFIGURATION
+# CONFIG
 # ============================================================
 
 ACCESS_PASSWORD = os.environ.get("ACCESS_PASSWORD")
@@ -28,8 +30,8 @@ if not HF_TOKEN:
 # ============================================================
 
 app = FastAPI(
-    title="DARULDARK Number Lookup API",
-    version="1.0.0",
+    title="DARULDARK Private Admin API",
+    version="2.0.0",
 )
 
 
@@ -51,7 +53,7 @@ app.add_middleware(
 
 
 # ============================================================
-# HUGGING FACE FILESYSTEM
+# HUGGING FACE
 # ============================================================
 
 hf_fs = HfFileSystem(token=HF_TOKEN)
@@ -65,34 +67,56 @@ DATABASES = {
     "bsnl": {
         "name": "BSNL Mobile",
         "file": "19M-BSNL_Mobile.parquet",
-        "url": "hf://buckets/daruldark/tele1/19M-BSNL_Mobile.parquet",
+        "url": (
+            "hf://buckets/daruldark/tele1/"
+            "19M-BSNL_Mobile.parquet"
+        ),
     },
     "idea1": {
         "name": "Idea Part 01",
         "file": "50M-Idea_part01.parquet",
-        "url": "hf://buckets/daruldark/tele1/50M-Idea_part01.parquet",
+        "url": (
+            "hf://buckets/daruldark/tele1/"
+            "50M-Idea_part01.parquet"
+        ),
     },
     "idea2": {
         "name": "Idea Part 02",
-        "file": "50M-Idea_part02.parquet",
-        "url": "hf://buckets/daruldark/tele1/50M-Idea_part02.parquet",
+        "file": "50M-Idea_part02.parquet"
+        ,
+        "url": (
+            "hf://buckets/daruldark/tele1/"
+            "50M-Idea_part02.parquet"
+        ),
     },
 }
 
 
 # ============================================================
-# SESSION STORAGE
+# FIELDS ALLOWED IN THE ADMIN RESPONSE
+#
+# Keep this list intentionally small.
+# ============================================================
+
+DISPLAY_FIELDS = [
+    "Number",
+    "Carrier",
+]
+
+
+# ============================================================
+# SESSIONS
 # ============================================================
 
 SESSIONS = {}
 
-SESSION_DURATION = 8 * 60 * 60  # 8 hours
+SESSION_DURATION = 8 * 60 * 60
 
 SESSION_COOKIE = "daruldark_session"
 
 
 # ============================================================
-# REQUEST MODELS
+# LOGIN MODEL
 # ============================================================
 
 class LoginRequest(BaseModel):
@@ -100,15 +124,17 @@ class LoginRequest(BaseModel):
 
 
 # ============================================================
-# HELPERS
+# SESSION HELPERS
 # ============================================================
 
 def create_session():
     session_id = secrets.token_urlsafe(32)
 
+    now = time.time()
+
     SESSIONS[session_id] = {
-        "created": time.time(),
-        "expires": time.time() + SESSION_DURATION,
+        "created": now,
+        "expires": now + SESSION_DURATION,
     }
 
     return session_id
@@ -125,7 +151,7 @@ def get_session(request: Request):
     if not session:
         return None
 
-    if time.time() > session["expires"]:
+    if time.time() >= session["expires"]:
         SESSIONS.pop(session_id, None)
         return None
 
@@ -145,6 +171,24 @@ def require_session(request: Request):
 
 
 # ============================================================
+# AUDIT LOG
+# ============================================================
+
+def audit(event, database=None):
+    timestamp = datetime.now(timezone.utc).isoformat()
+
+    print(
+        f"AUDIT | {timestamp} | {event}"
+        + (
+            f" | database={database}"
+            if database
+            else ""
+        ),
+        flush=True,
+    )
+
+
+# ============================================================
 # ROOT
 # ============================================================
 
@@ -152,13 +196,13 @@ def require_session(request: Request):
 def root():
     return {
         "status": "online",
-        "service": "DARULDARK Number Lookup API",
+        "service": "DARULDARK Private Admin API",
         "developer": "daruldark",
     }
 
 
 # ============================================================
-# HEALTH CHECK
+# HEALTH
 # ============================================================
 
 @app.get("/health")
@@ -175,10 +219,13 @@ def health():
 
 @app.post("/api/login")
 def login(data: LoginRequest):
+
     if not secrets.compare_digest(
         data.password,
-        ACCESS_PASSWORD
+        ACCESS_PASSWORD,
     ):
+        audit("failed_login")
+
         raise HTTPException(
             status_code=401,
             detail="Invalid password.",
@@ -186,17 +233,17 @@ def login(data: LoginRequest):
 
     session_id = create_session()
 
-    response = {
-        "status": "success",
-        "message": "Login successful.",
-        "developer": "daruldark",
-    }
+    audit("successful_login")
 
-    from fastapi.responses import JSONResponse
+    response = JSONResponse(
+        content={
+            "status": "success",
+            "message": "Login successful.",
+            "developer": "daruldark",
+        }
+    )
 
-    result = JSONResponse(content=response)
-
-    result.set_cookie(
+    response.set_cookie(
         key=SESSION_COOKIE,
         value=session_id,
         httponly=True,
@@ -205,25 +252,20 @@ def login(data: LoginRequest):
         max_age=SESSION_DURATION,
     )
 
-    return result
+    return response
 
 
 # ============================================================
-# SESSION CHECK
+# SESSION
 # ============================================================
 
 @app.get("/api/session")
 def session_status(request: Request):
+
     session = get_session(request)
 
-    if not session:
-        return {
-            "authenticated": False,
-            "developer": "daruldark",
-        }
-
     return {
-        "authenticated": True,
+        "authenticated": session is not None,
         "developer": "daruldark",
     }
 
@@ -234,12 +276,13 @@ def session_status(request: Request):
 
 @app.post("/api/logout")
 def logout(request: Request):
+
     session_id = request.cookies.get(SESSION_COOKIE)
 
     if session_id:
         SESSIONS.pop(session_id, None)
 
-    from fastapi.responses import JSONResponse
+    audit("logout")
 
     response = JSONResponse(
         content={
@@ -260,27 +303,24 @@ def logout(request: Request):
 
 
 # ============================================================
-# DATABASE LIST
+# DATABASES
 # ============================================================
 
 @app.get("/api/databases")
 def list_databases(request: Request):
+
     require_session(request)
 
-    databases = []
-
-    for database_id, database in DATABASES.items():
-        databases.append(
+    return {
+        "status": "success",
+        "databases": [
             {
                 "id": database_id,
                 "name": database["name"],
                 "file": database["file"],
             }
-        )
-
-    return {
-        "status": "success",
-        "databases": databases,
+            for database_id, database in DATABASES.items()
+        ],
         "developer": "daruldark",
     }
 
@@ -295,25 +335,16 @@ def lookup(
     database: str,
     number: str,
 ):
+
     require_session(request)
 
-    # --------------------------------------------------------
-    # Validate database
-    # --------------------------------------------------------
-
-    database_key = database.lower().strip()
+    database_key = database.strip().lower()
 
     if database_key not in DATABASES:
         raise HTTPException(
             status_code=400,
             detail="Invalid database.",
         )
-
-    database_info = DATABASES[database_key]
-
-    # --------------------------------------------------------
-    # Clean number
-    # --------------------------------------------------------
 
     number = number.strip()
 
@@ -323,34 +354,22 @@ def lookup(
             detail="Number is required.",
         )
 
-    # Only accept digits.
     if not number.isdigit():
         raise HTTPException(
             status_code=400,
             detail="Number must contain digits only.",
         )
 
-    # --------------------------------------------------------
-    # Database connection
-    # --------------------------------------------------------
+    database_info = DATABASES[database_key]
 
     con = None
 
     try:
         con = duckdb.connect()
 
-        # Register authenticated Hugging Face filesystem.
         con.register_filesystem(hf_fs)
 
         file_url = database_info["url"]
-
-        # ----------------------------------------------------
-        # Query
-        #
-        # The database path is selected only from our fixed
-        # DATABASES mapping above. The phone number remains a
-        # prepared parameter.
-        # ----------------------------------------------------
 
         query = f"""
             SELECT *
@@ -364,7 +383,6 @@ def lookup(
             [number],
         )
 
-        # Get column names.
         columns = [
             description[0]
             for description in result.description
@@ -372,27 +390,41 @@ def lookup(
 
         row = result.fetchone()
 
-        matched = row is not None
+        audit(
+            "lookup",
+            database=database_info["name"],
+        )
 
-        # ----------------------------------------------------
-        # IMPORTANT:
-        #
-        # Do not return the actual row values through the
-        # public website/API response.
-        # ----------------------------------------------------
+        if row is None:
+            return {
+                "status": "success",
+                "database": database_info["name"],
+                "database_file": database_info["file"],
+                "matched": False,
+                "details": {},
+                "developer": "daruldark",
+            }
+
+        # Convert only the approved fields.
+        row_data = dict(zip(columns, row))
+
+        safe_details = {}
+
+        for field in DISPLAY_FIELDS:
+            if field in row_data:
+                safe_details[field] = row_data[field]
 
         return {
             "status": "success",
             "database": database_info["name"],
             "database_file": database_info["file"],
-            "matched": matched,
-            "columns_available": columns,
+            "matched": True,
+            "details": safe_details,
             "developer": "daruldark",
         }
 
     except Exception as error:
 
-        # Detailed error goes only to Render server logs.
         print(
             "DATABASE ERROR:",
             repr(error),
@@ -415,13 +447,16 @@ def lookup(
 
 
 # ============================================================
-# RUN SERVER
+# SERVER
 # ============================================================
 
 if __name__ == "__main__":
+
     import uvicorn
 
-    port = int(os.environ.get("PORT", "8000"))
+    port = int(
+        os.environ.get("PORT", "8000")
+    )
 
     uvicorn.run(
         app,

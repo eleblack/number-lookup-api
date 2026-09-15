@@ -1,45 +1,72 @@
 const API_URL = "https://number-lookup-api.onrender.com";
 
-
-// ============================================================
-// ELEMENTS
-// ============================================================
-
 const loginPanel = document.getElementById("loginPanel");
-const passwordInput = document.getElementById("password");
-const loginButton = document.getElementById("loginButton");
-const loginMessage = document.getElementById("loginMessage");
-
 const lookupPanel = document.getElementById("lookupPanel");
 
-const databaseInput = document.getElementById("database");
-const numberInput = document.getElementById("number");
-
-const runButton = document.getElementById("runButton");
+const passwordInput = document.getElementById("password");
+const loginButton = document.getElementById("loginButton");
 const logoutButton = document.getElementById("logoutButton");
+
+const databaseSelect = document.getElementById("database");
+const numberInput = document.getElementById("number");
+const runButton = document.getElementById("runButton");
 
 const responseBox = document.getElementById("response");
 
 
-// ============================================================
-// INITIAL SESSION CHECK
-// ============================================================
+/* ============================================================
+   DISPLAY HELPERS
+   ============================================================ */
 
-document.addEventListener("DOMContentLoaded", async () => {
-    await checkSession();
-});
+function showLogin() {
+    if (loginPanel) {
+        loginPanel.style.display = "block";
+    }
+
+    if (lookupPanel) {
+        lookupPanel.style.display = "none";
+    }
+}
 
 
-// ============================================================
-// CHECK SESSION
-// ============================================================
+function showAuthenticated() {
+    if (loginPanel) {
+        loginPanel.style.display = "none";
+    }
+
+    if (lookupPanel) {
+        lookupPanel.style.display = "block";
+    }
+}
+
+
+function showResponse(data) {
+    if (!responseBox) {
+        return;
+    }
+
+    responseBox.textContent =
+        JSON.stringify(data, null, 2);
+}
+
+
+function showMessage(message) {
+    showResponse({
+        message: message
+    });
+}
+
+
+/* ============================================================
+   SESSION CHECK
+   ============================================================ */
 
 async function checkSession() {
 
     try {
 
         const response = await fetch(
-            API_URL + "/api/session",
+            `${API_URL}/api/session`,
             {
                 method: "GET",
                 credentials: "include"
@@ -48,48 +75,50 @@ async function checkSession() {
 
         const data = await response.json();
 
-        if (data.authenticated === true) {
+        if (data.authenticated) {
             showAuthenticated();
+            await loadDatabases();
         } else {
             showLogin();
         }
 
     } catch (error) {
 
+        console.error(error);
+
         showLogin();
 
-        loginMessage.textContent =
-            "Unable to connect to authentication server.";
-
+        showMessage(
+            "Unable to connect to the API."
+        );
     }
 }
 
 
-// ============================================================
-// LOGIN
-// ============================================================
+/* ============================================================
+   LOGIN
+   ============================================================ */
 
 async function login() {
 
-    const password = passwordInput.value.trim();
+    const password =
+        passwordInput
+            ? passwordInput.value
+            : "";
 
     if (!password) {
-
-        loginMessage.textContent =
-            "Please enter your password.";
-
+        showMessage("Enter your password.");
         return;
     }
 
-    loginButton.disabled = true;
-    loginButton.textContent = "Checking...";
-
-    loginMessage.textContent = "";
-
     try {
 
+        if (loginButton) {
+            loginButton.disabled = true;
+        }
+
         const response = await fetch(
-            API_URL + "/api/login",
+            `${API_URL}/api/login`,
             {
                 method: "POST",
                 credentials: "include",
@@ -104,54 +133,53 @@ async function login() {
 
         const data = await response.json();
 
-        if (response.ok && data.status === "success") {
+        if (!response.ok) {
 
-            passwordInput.value = "";
+            showMessage({
+                status: "error",
+                message:
+                    data.detail ||
+                    "Login failed."
+            });
 
-            showAuthenticated();
-
-            responseBox.textContent =
-                JSON.stringify(
-                    {
-                        status: "ready",
-                        message: "Authentication successful. Enter a number.",
-                        Developer: "daruldark"
-                    },
-                    null,
-                    2
-                );
-
-        } else {
-
-            loginMessage.textContent =
-                data.message || "Login failed.";
-
+            return;
         }
+
+        if (passwordInput) {
+            passwordInput.value = "";
+        }
+
+        showAuthenticated();
+
+        await loadDatabases();
 
     } catch (error) {
 
-        loginMessage.textContent =
-            "Could not connect to API.";
+        console.error(error);
+
+        showMessage(
+            "Unable to connect to the API."
+        );
 
     } finally {
 
-        loginButton.disabled = false;
-        loginButton.textContent = "Login";
-
+        if (loginButton) {
+            loginButton.disabled = false;
+        }
     }
 }
 
 
-// ============================================================
-// LOGOUT
-// ============================================================
+/* ============================================================
+   LOGOUT
+   ============================================================ */
 
 async function logout() {
 
     try {
 
         await fetch(
-            API_URL + "/api/logout",
+            `${API_URL}/api/logout`,
             {
                 method: "POST",
                 credentials: "include"
@@ -162,140 +190,185 @@ async function logout() {
 
         console.error(error);
 
+    } finally {
+
+        showLogin();
+        showMessage("Logged out.");
     }
-
-    showLogin();
-
-    responseBox.textContent =
-        JSON.stringify(
-            {
-                status: "logged_out",
-                message: "Please login to continue.",
-                Developer: "daruldark"
-            },
-            null,
-            2
-        );
 }
 
 
-// ============================================================
-// LOOKUP
-// ============================================================
+/* ============================================================
+   LOAD DATABASES
+   ============================================================ */
 
-async function lookup() {
-
-    const number = numberInput.value.trim();
-    const database = databaseInput.value;
-
-    if (!number) {
-
-        responseBox.textContent =
-            JSON.stringify(
-                {
-                    status: "rejected",
-                    message: "Please enter a number.",
-                    Developer: "daruldark"
-                },
-                null,
-                2
-            );
-
-        return;
-    }
-
-    if (!/^\d{10,15}$/.test(number)) {
-
-        responseBox.textContent =
-            JSON.stringify(
-                {
-                    status: "rejected",
-                    message: "Enter a valid 10-15 digit number.",
-                    Developer: "daruldark"
-                },
-                null,
-                2
-            );
-
-        return;
-    }
-
-    runButton.disabled = true;
-    runButton.textContent = "Searching...";
-
-    responseBox.textContent = "Searching database...";
+async function loadDatabases() {
 
     try {
 
-        const url =
-            API_URL +
-            "/api/lookup?number=" +
-            encodeURIComponent(number) +
-            "&database=" +
-            encodeURIComponent(database);
-
         const response = await fetch(
-            url,
+            `${API_URL}/api/databases`,
             {
                 method: "GET",
                 credentials: "include"
             }
         );
 
+        if (response.status === 401) {
+            showLogin();
+            return;
+        }
+
         const data = await response.json();
+
+        if (!response.ok) {
+            showMessage(data);
+            return;
+        }
+
+        if (!databaseSelect) {
+            return;
+        }
+
+        databaseSelect.innerHTML = "";
+
+        for (const database of data.databases) {
+
+            const option =
+                document.createElement("option");
+
+            option.value = database.id;
+            option.textContent = database.name;
+
+            databaseSelect.appendChild(option);
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+        showMessage(
+            "Unable to load databases."
+        );
+    }
+}
+
+
+/* ============================================================
+   LOOKUP
+   ============================================================ */
+
+async function lookup() {
+
+    const database =
+        databaseSelect
+            ? databaseSelect.value
+            : "";
+
+    const number =
+        numberInput
+            ? numberInput.value.trim()
+            : "";
+
+    if (!number) {
+        showMessage("Enter a number.");
+        return;
+    }
+
+    if (!/^\d+$/.test(number)) {
+        showMessage(
+            "Number must contain digits only."
+        );
+        return;
+    }
+
+    try {
+
+        if (runButton) {
+            runButton.disabled = true;
+        }
+
+        showMessage("Searching...");
+
+        const params = new URLSearchParams();
+
+        params.set("database", database);
+        params.set("number", number);
+
+        const response = await fetch(
+            `${API_URL}/api/lookup?${params.toString()}`,
+            {
+                method: "GET",
+                credentials: "include"
+            }
+        );
 
         if (response.status === 401) {
 
             showLogin();
 
-            responseBox.textContent =
-                JSON.stringify(
-                    data,
-                    null,
-                    2
-                );
+            showMessage(
+                "Your session has expired. Please log in again."
+            );
 
             return;
         }
 
-        responseBox.textContent =
-            JSON.stringify(
-                data,
-                null,
-                2
-            );
+        const data = await response.json();
+
+        showResponse(data);
 
     } catch (error) {
 
-        responseBox.textContent =
-            JSON.stringify(
-                {
-                    status: "error",
-                    message: "Could not connect to API.",
-                    Developer: "daruldark"
-                },
-                null,
-                2
-            );
+        console.error(error);
+
+        showMessage({
+            status: "error",
+            message:
+                "Unable to connect to the API."
+        });
 
     } finally {
 
-        runButton.disabled = false;
-        runButton.textContent = "Run →";
-
+        if (runButton) {
+            runButton.disabled = false;
+        }
     }
 }
 
 
-// ============================================================
-// ENTER KEY
-// ============================================================
+/* ============================================================
+   EVENTS
+   ============================================================ */
+
+if (loginButton) {
+    loginButton.addEventListener(
+        "click",
+        login
+    );
+}
+
+
+if (logoutButton) {
+    logoutButton.addEventListener(
+        "click",
+        logout
+    );
+}
+
+
+if (runButton) {
+    runButton.addEventListener(
+        "click",
+        lookup
+    );
+}
+
 
 if (passwordInput) {
-
     passwordInput.addEventListener(
         "keydown",
-        function(event) {
+        function (event) {
 
             if (event.key === "Enter") {
                 login();
@@ -307,10 +380,9 @@ if (passwordInput) {
 
 
 if (numberInput) {
-
     numberInput.addEventListener(
         "keydown",
-        function(event) {
+        function (event) {
 
             if (event.key === "Enter") {
                 lookup();
@@ -321,39 +393,8 @@ if (numberInput) {
 }
 
 
-// ============================================================
-// UI STATE
-// ============================================================
+/* ============================================================
+   START
+   ============================================================ */
 
-function showLogin() {
-
-    if (loginPanel) {
-        loginPanel.style.display = "block";
-    }
-
-    if (lookupPanel) {
-        lookupPanel.style.display = "none";
-    }
-
-    if (logoutButton) {
-        logoutButton.style.display = "none";
-    }
-
-}
-
-
-function showAuthenticated() {
-
-    if (loginPanel) {
-        loginPanel.style.display = "none";
-    }
-
-    if (lookupPanel) {
-        lookupPanel.style.display = "block";
-    }
-
-    if (logoutButton) {
-        logoutButton.style.display = "inline-block";
-    }
-
-}
+checkSession();
