@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Number Lookup API</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <nav>
+        <div class="logo">
+            <span class="status"></span>
+            ANSHAPI
+        </div>
+
+        <div class="nav-links">
+            <a href="#">Home</a>
+            <a href="#" class="active">API</a>
+            <a href="#">Docs</a>
+            <a href="#">Projects</a>
+            <a href="#">Swagger UI</a>
+        </div>
+    </nav>
+
+
+    <main>
+
+        <section class="api-card">
+
+            <div class="method">
+                GET
+                <span>/api/lookup</span>
+            </div>
+
+            <h1>Number Info Lookup</h1>
+
+            <p class="description">
+                Search authorized number records through the API.
+            </p>
+
+
+            <div class="parameters">
+
+                <div class="field">
+
+                    <label>NUMBER</label>
+
+                    <input
+                        id="number"
+                        type="text"
+                        placeholder="Enter number"
+                    >
+
+                </div>
+
+                <button onclick="lookup()">
+                    Run →
+                </button>
+
+            </div>
+
+
+            <div class="response-title">
+                Response
+            </div>
+
+            <pre id="response">// response will appear here</pre>
+
+        </section>
+
+    </main>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
