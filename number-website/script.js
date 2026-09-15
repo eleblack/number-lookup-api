@@ -14,7 +14,7 @@ async function lookup() {
     try {
 
         const url =
-            "http://localhost:8080/?number=" +
+            "https://number-lookup-api.onrender.com/?number=" +
             encodeURIComponent(number);
 
         const response = await fetch(url);
