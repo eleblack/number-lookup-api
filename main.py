@@ -1,21 +1,24 @@
 from fastapi import FastAPI, Request, Query
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 import os
+import secrets
+import time
 import duckdb
 from huggingface_hub import HfFileSystem
 
 
 # ============================================================
-# NUMBER API
+# DARULDARK NUMBER LOOKUP API
 # ============================================================
 
 app = FastAPI(
-    title="NUMBER API",
-    description="DARULDARK Number Database API",
-    version="1.0.0"
+    title="DARULDARK Number Lookup API",
+    description="Authorized database lookup API",
+    version="2.0.0"
 )
 
 
@@ -30,10 +33,69 @@ app.add_middleware(
         "http://localhost:5500",
         "http://127.0.0.1:5500",
     ],
-    allow_credentials=False,
-    allow_methods=["GET"],
-    allow_headers=["*"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
 )
+
+
+# ============================================================
+# SERVER-SIDE AUTHENTICATION
+# ============================================================
+
+# Set this in Render:
+#
+# ACCESS_PASSWORD=darul123
+#
+# For local testing:
+#
+# PowerShell:
+# $env:ACCESS_PASSWORD="darul123"
+
+ACCESS_PASSWORD = os.environ.get("ACCESS_PASSWORD")
+
+if not ACCESS_PASSWORD:
+    print("WARNING: ACCESS_PASSWORD is not configured.")
+
+
+# Random session tokens.
+# Sessions disappear when the Render service restarts.
+SESSIONS = {}
+
+SESSION_COOKIE = "daruldark_session"
+
+SESSION_DURATION = 60 * 60 * 8  # 8 hours
+
+
+def create_session():
+    token = secrets.token_urlsafe(32)
+
+    SESSIONS[token] = {
+        "created": time.time()
+    }
+
+    return token
+
+
+def valid_session(token):
+    if not token:
+        return False
+
+    session = SESSIONS.get(token)
+
+    if not session:
+        return False
+
+    if time.time() - session["created"] > SESSION_DURATION:
+        SESSIONS.pop(token, None)
+        return False
+
+    return True
+
+
+def remove_session(token):
+    if token:
+        SESSIONS.pop(token, None)
 
 
 # ============================================================
@@ -46,27 +108,31 @@ hf_fs = HfFileSystem(token=False)
 con.register_filesystem(hf_fs)
 
 
+# ============================================================
+# DATABASES
+# ============================================================
+
 DATABASES = {
     "bsnl": {
         "name": "BSNL Mobile",
         "file": "19M-BSNL_Mobile.parquet",
         "url": "hf://buckets/daruldark/tele1/19M-BSNL_Mobile.parquet",
-        "size": "402 MB",
+        "size": "402 MB"
     },
 
     "idea_part01": {
         "name": "Idea Part 01",
         "file": "50M-Idea_part01.parquet",
         "url": "hf://buckets/daruldark/tele1/50M-Idea_part01.parquet",
-        "size": "525 MB",
+        "size": "525 MB"
     },
 
     "idea_part02": {
         "name": "Idea Part 02",
         "file": "50M-Idea_part02.parquet",
         "url": "hf://buckets/daruldark/tele1/50M-Idea_part02.parquet",
-        "size": "410 MB",
-    },
+        "size": "410 MB"
+    }
 }
 
 
@@ -85,8 +151,8 @@ async def custom_http_exception_handler(
             content={
                 "status": "rejected",
                 "message": "Invalid endpoint.",
-                "Developer": "daruldark",
-            },
+                "Developer": "daruldark"
+            }
         )
 
     return JSONResponse(
@@ -94,8 +160,8 @@ async def custom_http_exception_handler(
         content={
             "status": "error",
             "detail": exc.detail,
-            "Developer": "daruldark",
-        },
+            "Developer": "daruldark"
+        }
     )
 
 
@@ -107,11 +173,10 @@ async def custom_http_exception_handler(
 async def home():
     return {
         "status": "online",
-        "service": "NUMBER API",
+        "service": "DARULDARK Number Lookup API",
         "Developer": "daruldark",
-        "website": "number-5h6b.onrender.com",
-        "access": "direct",
-        "databases": list(DATABASES.keys()),
+        "authentication": "required",
+        "databases": list(DATABASES.keys())
     }
 
 
@@ -123,8 +188,121 @@ async def home():
 async def health():
     return {
         "status": "online",
-        "service": "NUMBER API",
-        "Developer": "daruldark",
+        "service": "DARULDARK Number Lookup API",
+        "Developer": "daruldark"
+    }
+
+
+# ============================================================
+# LOGIN
+# ============================================================
+
+@app.post("/api/login")
+async def login(request: Request):
+
+    if not ACCESS_PASSWORD:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "error",
+                "message": "Server authentication is not configured.",
+                "Developer": "daruldark"
+            }
+        )
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "status": "rejected",
+                "message": "Invalid request.",
+                "Developer": "daruldark"
+            }
+        )
+
+    password = str(body.get("password", ""))
+
+    if not secrets.compare_digest(password, ACCESS_PASSWORD):
+        return JSONResponse(
+            status_code=401,
+            content={
+                "status": "rejected",
+                "message": "Incorrect password.",
+                "Developer": "daruldark"
+            }
+        )
+
+    session_token = create_session()
+
+    response = JSONResponse(
+        content={
+            "status": "success",
+            "message": "Login successful.",
+            "Developer": "daruldark"
+        }
+    )
+
+    response.set_cookie(
+        key=SESSION_COOKIE,
+        value=session_token,
+        max_age=SESSION_DURATION,
+        httponly=True,
+        secure=True,
+        samesite="none"
+    )
+
+    return response
+
+
+# ============================================================
+# LOGOUT
+# ============================================================
+
+@app.post("/api/logout")
+async def logout(request: Request):
+
+    token = request.cookies.get(SESSION_COOKIE)
+
+    remove_session(token)
+
+    response = JSONResponse(
+        content={
+            "status": "success",
+            "message": "Logged out.",
+            "Developer": "daruldark"
+        }
+    )
+
+    response.delete_cookie(
+        key=SESSION_COOKIE,
+        httponly=True,
+        secure=True,
+        samesite="none"
+    )
+
+    return response
+
+
+# ============================================================
+# SESSION CHECK
+# ============================================================
+
+@app.get("/api/session")
+async def session(request: Request):
+
+    token = request.cookies.get(SESSION_COOKIE)
+
+    if valid_session(token):
+        return {
+            "authenticated": True,
+            "Developer": "daruldark"
+        }
+
+    return {
+        "authenticated": False,
+        "Developer": "daruldark"
     }
 
 
@@ -133,7 +311,19 @@ async def health():
 # ============================================================
 
 @app.get("/api/databases")
-async def databases():
+async def databases(request: Request):
+
+    token = request.cookies.get(SESSION_COOKIE)
+
+    if not valid_session(token):
+        return JSONResponse(
+            status_code=401,
+            content={
+                "status": "rejected",
+                "message": "Login required.",
+                "Developer": "daruldark"
+            }
+        )
 
     return {
         "status": "success",
@@ -143,25 +333,39 @@ async def databases():
                 "id": database_id,
                 "name": database["name"],
                 "file": database["file"],
-                "size": database["size"],
+                "size": database["size"]
             }
             for database_id, database in DATABASES.items()
-        ],
+        ]
     }
 
 
 # ============================================================
-# NUMBER LOOKUP
+# AUTHENTICATED LOOKUP
 # ============================================================
 
 @app.get("/api/lookup")
 async def lookup(
-    number: str = Query(..., description="Number to search"),
-    database: str = Query(
-        "bsnl",
-        description="Database ID"
-    ),
+    request: Request,
+    number: str = Query(...),
+    database: str = Query("bsnl")
 ):
+
+    # --------------------------------------------------------
+    # Check login
+    # --------------------------------------------------------
+
+    token = request.cookies.get(SESSION_COOKIE)
+
+    if not valid_session(token):
+        return JSONResponse(
+            status_code=401,
+            content={
+                "status": "rejected",
+                "message": "Please login before using the API.",
+                "Developer": "daruldark"
+            }
+        )
 
     # --------------------------------------------------------
     # Validate database
@@ -174,19 +378,15 @@ async def lookup(
                 "status": "rejected",
                 "message": "Unknown database.",
                 "available_databases": list(DATABASES.keys()),
-                "Developer": "daruldark",
-            },
+                "Developer": "daruldark"
+            }
         )
-
-    # --------------------------------------------------------
-    # Clean number
-    # --------------------------------------------------------
-
-    number = number.strip()
 
     # --------------------------------------------------------
     # Validate number
     # --------------------------------------------------------
+
+    number = number.strip()
 
     if (
         not number
@@ -199,8 +399,8 @@ async def lookup(
             content={
                 "status": "rejected",
                 "message": "Invalid number.",
-                "Developer": "daruldark",
-            },
+                "Developer": "daruldark"
+            }
         )
 
     selected_database = DATABASES[database]
@@ -208,7 +408,7 @@ async def lookup(
     file_url = selected_database["url"]
 
     # --------------------------------------------------------
-    # Database lookup
+    # Query database
     # --------------------------------------------------------
 
     try:
@@ -216,7 +416,7 @@ async def lookup(
         query = """
             SELECT *
             FROM read_parquet(?)
-            WHERE CAST("Number" AS VARCHAR) = ?
+            WHERE "Number" = ?
             LIMIT 1
         """
 
@@ -232,12 +432,7 @@ async def lookup(
 
         row = result.fetchone()
 
-        # ----------------------------------------------------
-        # Not found
-        # ----------------------------------------------------
-
         if row is None:
-
             return JSONResponse(
                 status_code=404,
                 content={
@@ -245,16 +440,13 @@ async def lookup(
                     "database": selected_database["name"],
                     "database_file": selected_database["file"],
                     "matched": False,
-                    "Developer": "daruldark",
-                },
+                    "Developer": "daruldark"
+                }
             )
 
         # ----------------------------------------------------
-        # Found
-        #
-        # IMPORTANT:
-        # Do not return the actual row because the dataset
-        # contains personal information.
+        # Do not expose the personal-data values through the
+        # public website/API response.
         # ----------------------------------------------------
 
         return {
@@ -263,7 +455,7 @@ async def lookup(
             "database_file": selected_database["file"],
             "matched": True,
             "columns_available": columns,
-            "Developer": "daruldark",
+            "Developer": "daruldark"
         }
 
     except Exception as error:
@@ -275,8 +467,8 @@ async def lookup(
             content={
                 "status": "error",
                 "message": "Database operation failed.",
-                "Developer": "daruldark",
-            },
+                "Developer": "daruldark"
+            }
         )
 
 
@@ -288,12 +480,10 @@ if __name__ == "__main__":
 
     import uvicorn
 
-    port = int(
-        os.environ.get("PORT", 8080)
-    )
+    port = int(os.environ.get("PORT", 8080))
 
     uvicorn.run(
         app,
         host="0.0.0.0",
-        port=port,
+        port=port
     )
