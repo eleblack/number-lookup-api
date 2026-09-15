@@ -116,21 +116,21 @@ DATABASES = {
     "bsnl": {
         "name": "BSNL Mobile",
         "file": "19M-BSNL_Mobile.parquet",
-        "url": "hf://buckets/daruldark/tele1/19M-BSNL_Mobile.parquet",
+        "url": "hf://buckets/daruldark/tele1/tree/19M-BSNL_Mobile.parquet",
         "size": "402 MB"
     },
 
     "idea_part01": {
         "name": "Idea Part 01",
         "file": "50M-Idea_part01.parquet",
-        "url": "hf://buckets/daruldark/tele1/50M-Idea_part01.parquet",
+        "url": "hf://buckets/daruldark/tele1/tree/50M-Idea_part01.parquet",
         "size": "525 MB"
     },
 
     "idea_part02": {
         "name": "Idea Part 02",
         "file": "50M-Idea_part02.parquet",
-        "url": "hf://buckets/daruldark/tele1/50M-Idea_part02.parquet",
+        "url": "hf://buckets/daruldark/tele1/tree/50M-Idea_part02.parquet",
         "size": "410 MB"
     }
 }
