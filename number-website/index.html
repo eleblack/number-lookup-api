@@ -1,7 +1,9 @@
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -9,38 +11,43 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>NUMBER - DARULDARK</title>
+    <title>NUMBER — DARULDARK</title>
 
     <meta
         name="description"
-        content="NUMBER API by DARULDARK - Authorized database lookup service"
+        content="NUMBER API by DARULDARK"
     >
 
     <link
         rel="stylesheet"
         href="style.css"
     >
+
 </head>
 
 
 <body>
 
+
     <!-- =====================================================
          NAVIGATION
-         ===================================================== -->
+    ====================================================== -->
 
     <nav>
 
         <div class="logo">
+
             <span class="status"></span>
-            DARULDARK
+
+            NUMBER
+
         </div>
 
 
         <div class="nav-links">
 
             <a
-                href="#"
+                href="#home"
                 class="active"
             >
                 Home
@@ -75,16 +82,17 @@
     </nav>
 
 
+
     <!-- =====================================================
          MAIN
-         ===================================================== -->
+    ====================================================== -->
 
-    <main>
+    <main id="home">
 
 
         <!-- =================================================
              API LOOKUP
-             ================================================= -->
+        ================================================== -->
 
         <section
             id="api"
@@ -92,11 +100,11 @@
         >
 
             <div class="method">
-                <strong>GET</strong>
 
-                <span>
-                    /api/lookup
-                </span>
+                <span>GET</span>
+
+                <span>/api/lookup</span>
+
             </div>
 
 
@@ -106,8 +114,12 @@
 
 
             <p class="description">
-                Search authorized records through the DARULDARK API.
+
+                Search authorized records through the
+                DARULDARK NUMBER API.
+
             </p>
+
 
 
             <!-- DATABASE -->
@@ -138,35 +150,17 @@
             </div>
 
 
-            <!-- API KEY -->
+
+            <!-- NUMBER -->
 
             <div class="field">
 
-                <label for="apiKey">
-                    API KEY
+                <label for="number">
+                    NUMBER
                 </label>
 
 
-                <input
-                    id="apiKey"
-                    type="password"
-                    autocomplete="off"
-                    placeholder="Enter your API key"
-                >
-
-            </div>
-
-
-            <!-- NUMBER + RUN -->
-
-            <div class="parameters">
-
-                <div class="field">
-
-                    <label for="number">
-                        NUMBER
-                    </label>
-
+                <div class="number-row">
 
                     <input
                         id="number"
@@ -177,17 +171,19 @@
                         placeholder="Enter number"
                     >
 
+
+                    <button
+                        id="runButton"
+                        type="button"
+                        onclick="lookup()"
+                    >
+                        Run →
+                    </button>
+
                 </div>
 
-
-                <button
-                    type="button"
-                    onclick="lookup()"
-                >
-                    Run →
-                </button>
-
             </div>
+
 
 
             <!-- RESPONSE -->
@@ -199,7 +195,7 @@
 
             <pre id="response">{
   "status": "waiting",
-  "message": "Select a database, enter your API key and number.",
+  "message": "Select a database and enter a number.",
   "Developer": "daruldark"
 }</pre>
 
@@ -208,8 +204,8 @@
 
 
         <!-- =================================================
-             DATA SOURCES
-             ================================================= -->
+             DATA
+        ================================================== -->
 
         <section
             id="data"
@@ -218,11 +214,9 @@
 
             <div class="method">
 
-                <strong>DATA</strong>
+                <span>DATA</span>
 
-                <span>
-                    DARULDARK / TELE1
-                </span>
+                <span>DARULDARK / TELE1</span>
 
             </div>
 
@@ -233,14 +227,15 @@
 
 
             <p class="description">
-                Available authorized database sources.
+
+                Available database sources.
+
             </p>
+
 
 
             <div class="data-source">
 
-
-                <!-- BSNL -->
 
                 <div class="data-file">
 
@@ -265,8 +260,6 @@
 
 
 
-                <!-- IDEA PART 01 -->
-
                 <div class="data-file">
 
                     <div>
@@ -290,8 +283,6 @@
 
 
 
-                <!-- IDEA PART 02 -->
-
                 <div class="data-file">
 
                     <div>
@@ -313,6 +304,7 @@
 
                 </div>
 
+
             </div>
 
         </section>
@@ -321,7 +313,7 @@
 
         <!-- =================================================
              DOCUMENTATION
-             ================================================= -->
+        ================================================== -->
 
         <section
             id="docs"
@@ -330,11 +322,9 @@
 
             <div class="method">
 
-                <strong>API</strong>
+                <span>API</span>
 
-                <span>
-                    DOCUMENTATION
-                </span>
+                <span>DOCUMENTATION</span>
 
             </div>
 
@@ -345,7 +335,9 @@
 
 
             <p class="description">
+
                 Explore the NUMBER API using Swagger UI.
+
             </p>
 
 
@@ -362,8 +354,8 @@
 
 
         <!-- =================================================
-             PROJECT
-             ================================================= -->
+             PROJECTS
+        ================================================== -->
 
         <section
             id="projects"
@@ -372,11 +364,9 @@
 
             <div class="method">
 
-                <strong>PROJECT</strong>
+                <span>PROJECT</span>
 
-                <span>
-                    DARULDARK
-                </span>
+                <span>DARULDARK</span>
 
             </div>
 
@@ -387,72 +377,10 @@
 
 
             <p class="description">
-                FastAPI-powered authorized database service.
+
+                FastAPI-powered database lookup service.
+
             </p>
-
-
-            <div class="project-info">
-
-                <p>
-                    <strong>Website:</strong>
-                    number-5h6b.onrender.com
-                </p>
-
-
-                <p>
-                    <strong>Developer:</strong>
-                    daruldark
-                </p>
-
-
-                <p>
-                    <strong>API:</strong>
-                    number-lookup-api.onrender.com
-                </p>
-
-            </div>
-
-        </section>
-
-
-
-        <!-- =================================================
-             API INFORMATION
-             ================================================= -->
-
-        <section class="api-card">
-
-            <div class="method">
-
-                <strong>INFO</strong>
-
-                <span>
-                    NUMBER API
-                </span>
-
-            </div>
-
-
-            <h2>
-                API Status
-            </h2>
-
-
-            <p class="description">
-                The API requires a valid authorization key before
-                database requests can be processed.
-            </p>
-
-
-            <div class="status-box">
-
-                <span class="status"></span>
-
-                <span>
-                    API service online
-                </span>
-
-            </div>
 
         </section>
 
@@ -463,17 +391,14 @@
 
     <!-- =====================================================
          FOOTER
-         ===================================================== -->
+    ====================================================== -->
 
     <footer>
 
         <p>
             © 2026
-            <strong>
-                DARULDARK
-            </strong>
+            <strong>DARULDARK</strong>
         </p>
-
 
         <p>
             NUMBER API
@@ -485,9 +410,10 @@
 
     <!-- =====================================================
          JAVASCRIPT
-         ===================================================== -->
+    ====================================================== -->
 
     <script src="script.js"></script>
+
 
 </body>
 

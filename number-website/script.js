@@ -2,23 +2,22 @@ const API_URL = "https://number-lookup-api.onrender.com";
 
 
 // ============================================================
-// NUMBER API LOOKUP
+// LOOKUP
 // ============================================================
 
 async function lookup() {
 
     const numberInput = document.getElementById("number");
     const databaseInput = document.getElementById("database");
-    const apiKeyInput = document.getElementById("apiKey");
     const responseBox = document.getElementById("response");
+    const button = document.getElementById("runButton");
 
     const number = numberInput.value.trim();
     const database = databaseInput.value;
-    const apiKey = apiKeyInput ? apiKeyInput.value.trim() : "";
 
 
     // --------------------------------------------------------
-    // Validate number
+    // Validate empty number
     // --------------------------------------------------------
 
     if (!number) {
@@ -38,7 +37,7 @@ async function lookup() {
 
 
     // --------------------------------------------------------
-    // Validate number format
+    // Validate digits
     // --------------------------------------------------------
 
     if (!/^\d{10,15}$/.test(number)) {
@@ -46,27 +45,7 @@ async function lookup() {
         responseBox.textContent = JSON.stringify(
             {
                 status: "rejected",
-                message: "Number must contain 10 to 15 digits.",
-                Developer: "daruldark"
-            },
-            null,
-            2
-        );
-
-        return;
-    }
-
-
-    // --------------------------------------------------------
-    // Validate API key
-    // --------------------------------------------------------
-
-    if (!apiKey) {
-
-        responseBox.textContent = JSON.stringify(
-            {
-                status: "rejected",
-                message: "Please enter your API key.",
+                message: "Enter a valid number containing 10 to 15 digits.",
                 Developer: "daruldark"
             },
             null,
@@ -83,6 +62,9 @@ async function lookup() {
 
     responseBox.textContent = "Loading...";
 
+    button.disabled = true;
+    button.textContent = "Searching...";
+
 
     try {
 
@@ -94,25 +76,8 @@ async function lookup() {
             encodeURIComponent(database);
 
 
-        // ----------------------------------------------------
-        // API request
-        // ----------------------------------------------------
+        const response = await fetch(url);
 
-        const response = await fetch(
-            url,
-            {
-                method: "GET",
-
-                headers: {
-                    "X-API-Key": apiKey
-                }
-            }
-        );
-
-
-        // ----------------------------------------------------
-        // Read JSON response
-        // ----------------------------------------------------
 
         let data;
 
@@ -120,28 +85,19 @@ async function lookup() {
 
             data = await response.json();
 
-        } catch (error) {
+        } catch {
 
             data = {
                 status: "error",
                 message: "API returned an invalid response.",
-                http_status: response.status,
                 Developer: "daruldark"
             };
 
         }
 
 
-        // ----------------------------------------------------
-        // Display response
-        // ----------------------------------------------------
-
         responseBox.textContent =
-            JSON.stringify(
-                data,
-                null,
-                2
-            );
+            JSON.stringify(data, null, 2);
 
 
     } catch (error) {
@@ -150,21 +106,24 @@ async function lookup() {
             JSON.stringify(
                 {
                     status: "error",
-                    message: "Could not connect to API.",
-                    details: error.message,
+                    message: "Could not connect to NUMBER API.",
                     Developer: "daruldark"
                 },
                 null,
                 2
             );
 
-    }
+    } finally {
 
+        button.disabled = false;
+        button.textContent = "Run →";
+
+    }
 }
 
 
 // ============================================================
-// ENTER KEY SUPPORT
+// ENTER KEY
 // ============================================================
 
 document.addEventListener(
@@ -174,40 +133,16 @@ document.addEventListener(
         const numberInput =
             document.getElementById("number");
 
-        const apiKeyInput =
-            document.getElementById("apiKey");
+        numberInput.addEventListener(
+            "keydown",
+            function (event) {
 
-
-        if (numberInput) {
-
-            numberInput.addEventListener(
-                "keydown",
-                function (event) {
-
-                    if (event.key === "Enter") {
-                        lookup();
-                    }
-
+                if (event.key === "Enter") {
+                    lookup();
                 }
-            );
 
-        }
-
-
-        if (apiKeyInput) {
-
-            apiKeyInput.addEventListener(
-                "keydown",
-                function (event) {
-
-                    if (event.key === "Enter") {
-                        lookup();
-                    }
-
-                }
-            );
-
-        }
+            }
+        );
 
     }
 );
