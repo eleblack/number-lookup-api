@@ -1,80 +1,396 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Number Lookup API</title>
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>DARULDARK - Number Lookup API</title>
+
+    <meta
+        name="description"
+        content="DARULDARK authorized database lookup API"
+    >
 
     <link rel="stylesheet" href="style.css">
+
 </head>
+
 
 <body>
 
+
+    <!-- =====================================================
+         NAVIGATION
+         ===================================================== -->
+
     <nav>
+
         <div class="logo">
+
             <span class="status"></span>
+
             DARULDARK
+
         </div>
 
+
         <div class="nav-links">
-            <a href="#">Home</a>
-            <a href="#" class="active">API</a>
-            <a href="#">Docs</a>
-            <a href="#">Projects</a>
-            <a href="#">Swagger UI</a>
+
+            <a href="#" class="active">
+                Home
+            </a>
+
+            <a href="#api">
+                API
+            </a>
+
+            <a href="#docs">
+                Docs
+            </a>
+
+            <a href="#projects">
+                Projects
+            </a>
+
+            <a href="#data">
+                Data
+            </a>
+
+            <a
+                href="https://number-lookup-api.onrender.com/docs"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Swagger UI
+            </a>
+
         </div>
+
     </nav>
 
 
+
+    <!-- =====================================================
+         MAIN
+         ===================================================== -->
+
     <main>
 
-        <section class="api-card">
+
+        <!-- =================================================
+             API
+             ================================================= -->
+
+        <section id="api" class="api-card">
 
             <div class="method">
+
                 GET
-                <span>/api/lookup</span>
+
+                <span>
+                    /api/lookup
+                </span>
+
             </div>
 
-            <h1>Number Info Lookup</h1>
+
+            <h1>
+                Number Info Lookup
+            </h1>
+
 
             <p class="description">
-                Search authorized number records through the API.
+
+                Search authorized records through the
+                DARULDARK API.
+
             </p>
 
+
+
+            <!-- DATABASE -->
+
+            <div class="field">
+
+                <label for="database">
+                    DATABASE
+                </label>
+
+                <select id="database">
+
+                    <option value="bsnl">
+                        BSNL Mobile
+                    </option>
+
+                    <option value="idea_part01">
+                        Idea Part 01
+                    </option>
+
+                    <option value="idea_part02">
+                        Idea Part 02
+                    </option>
+
+                </select>
+
+            </div>
+
+
+
+            <!-- NUMBER -->
 
             <div class="parameters">
 
                 <div class="field">
 
-                    <label>NUMBER</label>
+                    <label for="number">
+                        NUMBER
+                    </label>
 
                     <input
                         id="number"
                         type="text"
+                        inputmode="numeric"
+                        autocomplete="off"
                         placeholder="Enter number"
                     >
 
                 </div>
 
-                <button onclick="lookup()">
+
+                <button
+                    type="button"
+                    onclick="lookup()"
+                >
                     Run →
                 </button>
 
             </div>
 
 
+
+            <!-- RESPONSE -->
+
             <div class="response-title">
                 Response
             </div>
 
-            <pre id="response">// response will appear here</pre>
+
+            <pre id="response">{
+  "status": "waiting",
+  "message": "Select a database and enter a number.",
+  "Developer": "daruldark"
+}</pre>
 
         </section>
 
+
+
+        <!-- =================================================
+             DATA
+             ================================================= -->
+
+        <section id="data" class="api-card">
+
+            <div class="method">
+
+                DATA
+
+                <span>
+                    DARULDARK / TELE1
+                </span>
+
+            </div>
+
+
+            <h2>
+                Data Sources
+            </h2>
+
+
+            <p class="description">
+
+                Available authorized database sources.
+
+            </p>
+
+
+
+            <div class="data-source">
+
+
+                <div class="data-file">
+
+                    <div>
+
+                        <strong>
+                            19M-BSNL_Mobile.parquet
+                        </strong>
+
+                        <small>
+                            BSNL Mobile
+                        </small>
+
+                    </div>
+
+                    <span>
+                        402 MB
+                    </span>
+
+                </div>
+
+
+
+                <div class="data-file">
+
+                    <div>
+
+                        <strong>
+                            50M-Idea_part01.parquet
+                        </strong>
+
+                        <small>
+                            Idea Part 01
+                        </small>
+
+                    </div>
+
+                    <span>
+                        525 MB
+                    </span>
+
+                </div>
+
+
+
+                <div class="data-file">
+
+                    <div>
+
+                        <strong>
+                            50M-Idea_part02.parquet
+                        </strong>
+
+                        <small>
+                            Idea Part 02
+                        </small>
+
+                    </div>
+
+                    <span>
+                        410 MB
+                    </span>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             DOCS
+             ================================================= -->
+
+        <section id="docs" class="api-card">
+
+            <div class="method">
+
+                API
+
+                <span>
+                    DOCUMENTATION
+                </span>
+
+            </div>
+
+
+            <h2>
+                Documentation
+            </h2>
+
+
+            <p class="description">
+
+                Explore the DARULDARK API using Swagger UI.
+
+            </p>
+
+
+            <a
+                href="https://number-lookup-api.onrender.com/docs"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Open Swagger UI →
+            </a>
+
+        </section>
+
+
+
+        <!-- =================================================
+             PROJECTS
+             ================================================= -->
+
+        <section id="projects" class="api-card">
+
+            <div class="method">
+
+                PROJECT
+
+                <span>
+                    DARULDARK
+                </span>
+
+            </div>
+
+
+            <h2>
+                DARULDARK API
+            </h2>
+
+
+            <p class="description">
+
+                FastAPI-powered authorized database service.
+
+            </p>
+
+        </section>
+
+
     </main>
+
+
+
+    <!-- =====================================================
+         FOOTER
+         ===================================================== -->
+
+    <footer>
+
+        <p>
+            © 2026 <strong>DARULDARK</strong>
+        </p>
+
+        <p>
+            Number Lookup API
+        </p>
+
+    </footer>
+
+
 
     <script src="script.js"></script>
 
 </body>
+
 </html>

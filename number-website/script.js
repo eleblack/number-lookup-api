@@ -1,36 +1,97 @@
+const API_URL =
+    "https://number-lookup-api.onrender.com";
+
+
 async function lookup() {
 
-    const number = document.getElementById("number").value.trim();
+    const number =
+        document
+            .getElementById("number")
+            .value
+            .trim();
 
-    const responseBox = document.getElementById("response");
+
+    const database =
+        document
+            .getElementById("database")
+            .value;
+
+
+    const responseBox =
+        document.getElementById("response");
+
 
     if (!number) {
-        responseBox.textContent = "Please enter a number.";
+
+        responseBox.textContent =
+            JSON.stringify(
+                {
+                    status: "rejected",
+                    message: "Please enter a number.",
+                    Developer: "daruldark"
+                },
+                null,
+                2
+            );
+
         return;
     }
 
-    responseBox.textContent = "Loading...";
+
+    responseBox.textContent =
+        "Loading...";
+
 
     try {
 
+        /*
+         * The API requires an API key.
+         *
+         * Do NOT put the real API key in this
+         * public JavaScript file.
+         *
+         * For a public website, authentication
+         * should be handled by a protected backend.
+         */
+
         const url =
-            "https://number-lookup-api.onrender.com/?number=" +
-            encodeURIComponent(number);
+            API_URL +
+            "/api/lookup?number=" +
+            encodeURIComponent(number) +
+            "&database=" +
+            encodeURIComponent(database);
 
-        const response = await fetch(url);
 
-        const data = await response.json();
+        const response =
+            await fetch(url);
+
+
+        const data =
+            await response.json();
+
 
         responseBox.textContent =
-            JSON.stringify(data, null, 2);
+            JSON.stringify(
+                data,
+                null,
+                2
+            );
+
 
     } catch (error) {
 
         responseBox.textContent =
-            JSON.stringify({
-                status: "error",
-                message: "Could not connect to API",
-                error: error.message
-            }, null, 2);
+            JSON.stringify(
+                {
+                    status: "error",
+                    message: "Could not connect to API.",
+                    error: error.message,
+                    Developer: "daruldark"
+                },
+                null,
+                2
+            );
+
     }
+
 }
