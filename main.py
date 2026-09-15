@@ -26,8 +26,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://daruldark.onrender.com",
-        "https://number-lookup-website.onrender.com",
+        "https://number-5h6b.onrender.com",
         "http://localhost:5500",
         "http://127.0.0.1:5500",
     ],
@@ -63,6 +62,7 @@ con.register_filesystem(hf_fs)
 # ============================================================
 
 DATABASES = {
+
     "bsnl": {
         "name": "BSNL Mobile",
         "file": "19M-BSNL_Mobile.parquet",
@@ -85,7 +85,8 @@ DATABASES = {
 
     "idea_part02": {
         "name": "Idea Part 02",
-        "file": "50M-Idea_part02.parquet",
+        "file": "50M-Idea_part02.parquet"
+        ,
         "url": (
             "hf://buckets/daruldark/tele1/"
             "50M-Idea_part02.parquet"
@@ -172,7 +173,9 @@ async def databases():
                 "file": database["file"],
                 "size": database["size"]
             }
-            for database_id, database in DATABASES.items()
+
+            for database_id, database
+            in DATABASES.items()
         ]
     }
 
@@ -183,21 +186,25 @@ async def databases():
 
 @app.get("/api/lookup")
 async def lookup(
+
     number: str = Query(
         ...,
         description="Number to search"
     ),
+
     database: str = Query(
         "bsnl",
         description="Database ID"
     ),
+
     x_api_key: str | None = Header(
-        default=None
+        default=None,
+        alias="X-API-Key"
     )
 ):
 
     # ========================================================
-    # API KEY CHECK
+    # CHECK API KEY CONFIGURATION
     # ========================================================
 
     if not API_KEY:
@@ -206,10 +213,17 @@ async def lookup(
             status_code=503,
             content={
                 "status": "error",
-                "message": "API authentication is not configured.",
+                "message": (
+                    "API authentication is not configured."
+                ),
                 "Developer": "daruldark"
             }
         )
+
+
+    # ========================================================
+    # CHECK API KEY
+    # ========================================================
 
     if x_api_key != API_KEY:
 
@@ -224,7 +238,7 @@ async def lookup(
 
 
     # ========================================================
-    # DATABASE VALIDATION
+    # CHECK DATABASE
     # ========================================================
 
     if database not in DATABASES:
@@ -243,8 +257,10 @@ async def lookup(
 
 
     # ========================================================
-    # NUMBER VALIDATION
+    # CHECK NUMBER
     # ========================================================
+
+    number = number.strip()
 
     if (
         not number
@@ -293,16 +309,26 @@ async def lookup(
             ]
         )
 
+
+        # ====================================================
+        # GET COLUMN NAMES
+        # ====================================================
+
         columns = [
             description[0]
             for description in result.description
         ]
 
+
+        # ====================================================
+        # GET MATCH
+        # ====================================================
+
         row = result.fetchone()
 
 
         # ====================================================
-        # NUMBER NOT FOUND
+        # NOT FOUND
         # ====================================================
 
         if row is None:
@@ -322,7 +348,9 @@ async def lookup(
         # ====================================================
         # SAFE RESPONSE
         #
-        # Do not expose personal-record fields.
+        # IMPORTANT:
+        # We intentionally do NOT return the actual database
+        # record or personal-information fields.
         # ====================================================
 
         return {
@@ -339,7 +367,12 @@ async def lookup(
     # DATABASE ERROR
     # ========================================================
 
-    except Exception:
+    except Exception as error:
+
+        print(
+            "Database error:",
+            str(error)
+        )
 
         return JSONResponse(
             status_code=500,
