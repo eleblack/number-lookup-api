@@ -20,17 +20,16 @@ app = FastAPI(
 
 # ============================================================
 # CORS
-# Allows your website running on localhost:5500
-# to communicate with the API running on localhost:8080.
 # ============================================================
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://number-lookup-website.onrender.com",
         "http://localhost:5500",
         "http://127.0.0.1:5500",
     ],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["GET"],
     allow_headers=["*"],
 )
@@ -74,7 +73,7 @@ async def custom_http_exception_handler(
             content={
                 "status": "rejected",
                 "message": "Invalid endpoint. Use /?number=XXXXXXXXXX",
-                "Developer": "@shreeapi"
+                "Developer": "daruldark"
             }
         )
 
@@ -83,7 +82,7 @@ async def custom_http_exception_handler(
         content={
             "status": "error",
             "detail": exc.detail,
-            "Developer": "@shreeapi"
+            "Developer": "daruldark"
         }
     )
 
@@ -116,10 +115,9 @@ async def fetch_data(
             content={
                 "status": "rejected",
                 "message": "Invalid parameter. Use /?number=XXXXXXXXXX",
-                "Developer": "@shreeapi"
+                "Developer": "daruldark"
             }
         )
-
 
     # --------------------------------------------------------
     # Search database
@@ -138,7 +136,6 @@ async def fetch_data(
             [number]
         )
 
-
         # ----------------------------------------------------
         # Get column names
         # ----------------------------------------------------
@@ -148,13 +145,11 @@ async def fetch_data(
             for description in result.description
         ]
 
-
         # ----------------------------------------------------
         # Get matching rows
         # ----------------------------------------------------
 
         rows = result.fetchall()
-
 
         # ----------------------------------------------------
         # Convert rows to JSON objects
@@ -164,7 +159,6 @@ async def fetch_data(
             dict(zip(columns, row))
             for row in rows
         ]
-
 
         # ----------------------------------------------------
         # No result
@@ -177,10 +171,9 @@ async def fetch_data(
                 content={
                     "status": "not_found",
                     "phone": number,
-                    "Developer": "@shreeapi"
+                    "Developer": "daruldark"
                 }
             )
-
 
         # ----------------------------------------------------
         # Successful result
@@ -189,9 +182,8 @@ async def fetch_data(
         return {
             "status": "success",
             "Data": records,
-            "Developer": "@shreeapi"
+            "Developer": "daruldark"
         }
-
 
     # --------------------------------------------------------
     # Database error
@@ -204,7 +196,7 @@ async def fetch_data(
             content={
                 "status": "error",
                 "message": f"Database error: {str(e)}",
-                "Developer": "@shreeapi"
+                "Developer": "daruldark"
             }
         )
 
@@ -218,7 +210,8 @@ async def health():
 
     return {
         "status": "online",
-        "service": "Number Lookup API"
+        "service": "Number Lookup API",
+        "Developer": "daruldark"
     }
 
 
@@ -228,10 +221,18 @@ async def health():
 
 if __name__ == "__main__":
 
+    import os
     import uvicorn
+
+    port = int(
+        os.environ.get(
+            "PORT",
+            8080
+        )
+    )
 
     uvicorn.run(
         app,
         host="0.0.0.0",
-        port=8080
+        port=port
     )
