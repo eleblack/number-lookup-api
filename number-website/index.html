@@ -2,77 +2,253 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Number Lookup API</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>daruldark - Number Lookup API</title>
+
+    <meta
+        name="description"
+        content="daruldark Number Lookup API"
+    >
 
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <nav>
+    <!-- ======================================================
+         NAVBAR
+         ====================================================== -->
+
+    <header class="navbar">
+
         <div class="logo">
-            <span class="status"></span>
-            ANSHAPI
+            daruldark
         </div>
 
-        <div class="nav-links">
-            <a href="#">Home</a>
-            <a href="#" class="active">API</a>
-            <a href="#">Docs</a>
-            <a href="#">Projects</a>
-            <a href="#">Swagger UI</a>
-        </div>
-    </nav>
+        <nav class="nav-links">
 
+            <a href="#" class="active">
+                Home
+            </a>
+
+            <a href="#api">
+                API
+            </a>
+
+            <a href="#docs">
+                Docs
+            </a>
+
+            <a href="#projects">
+                Projects
+            </a>
+
+            <a
+                href="https://number-lookup-api.onrender.com/docs"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Swagger
+            </a>
+
+        </nav>
+
+    </header>
+
+
+    <!-- ======================================================
+         MAIN
+         ====================================================== -->
 
     <main>
 
-        <section class="api-card">
+        <!-- HERO -->
 
-            <div class="method">
-                GET
-                <span>/api/lookup</span>
+        <section class="hero">
+
+            <div class="hero-content">
+
+                <h1>
+                    Number Lookup
+                </h1>
+
+                <p>
+                    Powered by <strong>daruldark</strong>
+                </p>
+
+                <p class="hero-description">
+                    Search the authorized database through the
+                    daruldark API.
+                </p>
+
             </div>
 
-            <h1>Number Info Lookup</h1>
-
-            <p class="description">
-                Search authorized number records through the API.
-            </p>
+        </section>
 
 
-            <div class="parameters">
+        <!-- ==================================================
+             API LOOKUP
+             ================================================== -->
 
-                <div class="field">
+        <section id="api" class="lookup-section">
 
-                    <label>NUMBER</label>
+            <div class="container">
+
+                <h2>
+                    API Lookup
+                </h2>
+
+                <p class="section-description">
+                    Enter a number to perform a lookup.
+                </p>
+
+
+                <div class="lookup-box">
 
                     <input
-                        id="number"
                         type="text"
+                        id="number"
                         placeholder="Enter number"
+                        autocomplete="off"
                     >
+
+                    <button
+                        type="button"
+                        onclick="lookup()"
+                    >
+                        Run
+                    </button>
 
                 </div>
 
-                <button onclick="lookup()">
-                    Run →
-                </button>
+
+                <!-- RESPONSE -->
+
+                <div class="response-container">
+
+                    <div class="response-header">
+                        Response
+                    </div>
+
+                    <pre id="response">{
+  "status": "waiting",
+  "message": "Enter a number and press Run.",
+  "Developer": "daruldark"
+}</pre>
+
+                </div>
 
             </div>
 
+        </section>
 
-            <div class="response-title">
-                Response
+
+        <!-- ==================================================
+             DOCUMENTATION
+             ================================================== -->
+
+        <section id="docs" class="docs-section">
+
+            <div class="container">
+
+                <h2>
+                    Documentation
+                </h2>
+
+                <p>
+                    The API endpoint is available at:
+                </p>
+
+                <div class="code-box">
+                    GET /
+                </div>
+
+                <p>
+                    Query parameter:
+                </p>
+
+                <div class="code-box">
+                    ?number=XXXXXXXXXX
+                </div>
+
+                <a
+                    class="docs-button"
+                    href="https://number-lookup-api.onrender.com/docs"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    Open Swagger Documentation
+                </a>
+
             </div>
 
-            <pre id="response">// response will appear here</pre>
+        </section>
+
+
+        <!-- ==================================================
+             PROJECTS
+             ================================================== -->
+
+        <section id="projects" class="projects-section">
+
+            <div class="container">
+
+                <h2>
+                    Projects
+                </h2>
+
+                <div class="project-card">
+
+                    <h3>
+                        daruldark Number Lookup API
+                    </h3>
+
+                    <p>
+                        FastAPI-powered database lookup service.
+                    </p>
+
+                    <a
+                        href="https://number-lookup-api.onrender.com/docs"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        View API Docs
+                    </a>
+
+                </div>
+
+            </div>
 
         </section>
 
     </main>
+
+
+    <!-- ======================================================
+         FOOTER
+         ====================================================== -->
+
+    <footer>
+
+        <p>
+            © 2026 <strong>daruldark</strong>. All rights reserved.
+        </p>
+
+        <p>
+            Powered by daruldark
+        </p>
+
+    </footer>
+
+
+    <!-- ======================================================
+         JAVASCRIPT
+         ====================================================== -->
 
     <script src="script.js"></script>
 
