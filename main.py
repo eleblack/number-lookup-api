@@ -1,9 +1,8 @@
-from fastapi import FastAPI, Request, Query, Header
+from fastapi import FastAPI, Request, Query
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-import os
 import duckdb
 from huggingface_hub import HfFileSystem
 
@@ -27,6 +26,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://number-5h6b.onrender.com",
+        "https://daruldark.onrender.com",
+        "https://number-lookup-website.onrender.com",
         "http://localhost:5500",
         "http://127.0.0.1:5500",
     ],
@@ -34,16 +35,6 @@ app.add_middleware(
     allow_methods=["GET"],
     allow_headers=["*"],
 )
-
-
-# ============================================================
-# API KEY
-# ============================================================
-
-API_KEY = os.environ.get("DARULDARK_API_KEY")
-
-if not API_KEY:
-    print("WARNING: DARULDARK_API_KEY is not configured.")
 
 
 # ============================================================
@@ -62,7 +53,6 @@ con.register_filesystem(hf_fs)
 # ============================================================
 
 DATABASES = {
-
     "bsnl": {
         "name": "BSNL Mobile",
         "file": "19M-BSNL_Mobile.parquet",
@@ -107,7 +97,6 @@ async def custom_http_exception_handler(
 ):
 
     if exc.status_code == 404:
-
         return JSONResponse(
             status_code=404,
             content={
@@ -173,20 +162,17 @@ async def databases():
                 "file": database["file"],
                 "size": database["size"]
             }
-
-            for database_id, database
-            in DATABASES.items()
+            for database_id, database in DATABASES.items()
         ]
     }
 
 
 # ============================================================
-# AUTHORIZED LOOKUP
+# LOOKUP
 # ============================================================
 
 @app.get("/api/lookup")
 async def lookup(
-
     number: str = Query(
         ...,
         description="Number to search"
@@ -195,50 +181,11 @@ async def lookup(
     database: str = Query(
         "bsnl",
         description="Database ID"
-    ),
-
-    x_api_key: str | None = Header(
-        default=None,
-        alias="X-API-Key"
     )
 ):
 
     # ========================================================
-    # CHECK API KEY CONFIGURATION
-    # ========================================================
-
-    if not API_KEY:
-
-        return JSONResponse(
-            status_code=503,
-            content={
-                "status": "error",
-                "message": (
-                    "API authentication is not configured."
-                ),
-                "Developer": "daruldark"
-            }
-        )
-
-
-    # ========================================================
-    # CHECK API KEY
-    # ========================================================
-
-    if x_api_key != API_KEY:
-
-        return JSONResponse(
-            status_code=401,
-            content={
-                "status": "rejected",
-                "message": "Valid API key required.",
-                "Developer": "daruldark"
-            }
-        )
-
-
-    # ========================================================
-    # CHECK DATABASE
+    # DATABASE VALIDATION
     # ========================================================
 
     if database not in DATABASES:
@@ -257,7 +204,7 @@ async def lookup(
 
 
     # ========================================================
-    # CHECK NUMBER
+    # NUMBER VALIDATION
     # ========================================================
 
     number = number.strip()
@@ -289,7 +236,7 @@ async def lookup(
 
 
     # ========================================================
-    # DATABASE SEARCH
+    # SEARCH DATABASE
     # ========================================================
 
     try:
@@ -297,7 +244,7 @@ async def lookup(
         query = """
             SELECT *
             FROM read_parquet(?)
-            WHERE "Number" = ?
+            WHERE CAST("Number" AS VARCHAR) = ?
             LIMIT 1
         """
 
@@ -309,20 +256,10 @@ async def lookup(
             ]
         )
 
-
-        # ====================================================
-        # GET COLUMN NAMES
-        # ====================================================
-
         columns = [
             description[0]
             for description in result.description
         ]
-
-
-        # ====================================================
-        # GET MATCH
-        # ====================================================
 
         row = result.fetchone()
 
@@ -348,9 +285,7 @@ async def lookup(
         # ====================================================
         # SAFE RESPONSE
         #
-        # IMPORTANT:
-        # We intentionally do NOT return the actual database
-        # record or personal-information fields.
+        # Do NOT return the actual personal-record values.
         # ====================================================
 
         return {
@@ -369,10 +304,7 @@ async def lookup(
 
     except Exception as error:
 
-        print(
-            "Database error:",
-            str(error)
-        )
+        print("DATABASE ERROR:", error)
 
         return JSONResponse(
             status_code=500,
@@ -390,6 +322,7 @@ async def lookup(
 
 if __name__ == "__main__":
 
+    import os
     import uvicorn
 
     port = int(
