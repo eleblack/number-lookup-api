@@ -27,6 +27,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://daruldark.onrender.com",
+        "https://number-lookup-website.onrender.com",
         "http://localhost:5500",
         "http://127.0.0.1:5500",
     ],
@@ -105,6 +106,7 @@ async def custom_http_exception_handler(
 ):
 
     if exc.status_code == 404:
+
         return JSONResponse(
             status_code=404,
             content={
@@ -199,6 +201,7 @@ async def lookup(
     # ========================================================
 
     if not API_KEY:
+
         return JSONResponse(
             status_code=503,
             content={
@@ -209,6 +212,7 @@ async def lookup(
         )
 
     if x_api_key != API_KEY:
+
         return JSONResponse(
             status_code=401,
             content={
@@ -224,12 +228,15 @@ async def lookup(
     # ========================================================
 
     if database not in DATABASES:
+
         return JSONResponse(
             status_code=400,
             content={
                 "status": "rejected",
                 "message": "Unknown database.",
-                "available_databases": list(DATABASES.keys()),
+                "available_databases": list(
+                    DATABASES.keys()
+                ),
                 "Developer": "daruldark"
             }
         )
@@ -245,6 +252,7 @@ async def lookup(
         or len(number) < 10
         or len(number) > 15
     ):
+
         return JSONResponse(
             status_code=400,
             content={
@@ -285,20 +293,10 @@ async def lookup(
             ]
         )
 
-
-        # ====================================================
-        # GET COLUMN NAMES
-        # ====================================================
-
         columns = [
             description[0]
             for description in result.description
         ]
-
-
-        # ====================================================
-        # GET MATCH
-        # ====================================================
 
         row = result.fetchone()
 
@@ -324,7 +322,7 @@ async def lookup(
         # ====================================================
         # SAFE RESPONSE
         #
-        # Do not return the underlying personal-record fields.
+        # Do not expose personal-record fields.
         # ====================================================
 
         return {
