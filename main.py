@@ -1,8 +1,9 @@
-from fastapi import FastAPI, Request, Query
+from fastapi import FastAPI, Request, Query, Header
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+import os
 import duckdb
 from huggingface_hub import HfFileSystem
 
@@ -12,7 +13,7 @@ from huggingface_hub import HfFileSystem
 # ============================================================
 
 app = FastAPI(
-    title="DARULDARK Number Lookup API",
+    title="NUMBER API",
     description="Authorized database lookup API",
     version="1.0.0"
 )
@@ -26,8 +27,6 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://number-5h6b.onrender.com",
-        "https://daruldark.onrender.com",
-        "https://number-lookup-website.onrender.com",
         "http://localhost:5500",
         "http://127.0.0.1:5500",
     ],
@@ -35,6 +34,16 @@ app.add_middleware(
     allow_methods=["GET"],
     allow_headers=["*"],
 )
+
+
+# ============================================================
+# API KEY
+# ============================================================
+
+API_KEY = os.environ.get("DARULDARK_API_KEY")
+
+if not API_KEY:
+    print("WARNING: DARULDARK_API_KEY is not configured.")
 
 
 # ============================================================
@@ -97,6 +106,7 @@ async def custom_http_exception_handler(
 ):
 
     if exc.status_code == 404:
+
         return JSONResponse(
             status_code=404,
             content={
@@ -125,7 +135,7 @@ async def home():
 
     return {
         "status": "online",
-        "service": "DARULDARK Number Lookup API",
+        "service": "NUMBER API",
         "Developer": "daruldark",
         "databases": list(DATABASES.keys())
     }
@@ -140,7 +150,7 @@ async def health():
 
     return {
         "status": "online",
-        "service": "DARULDARK Number Lookup API",
+        "service": "NUMBER API",
         "Developer": "daruldark"
     }
 
@@ -168,7 +178,7 @@ async def databases():
 
 
 # ============================================================
-# LOOKUP
+# AUTHORIZED LOOKUP
 # ============================================================
 
 @app.get("/api/lookup")
@@ -177,12 +187,41 @@ async def lookup(
         ...,
         description="Number to search"
     ),
-
     database: str = Query(
         "bsnl",
         description="Database ID"
+    ),
+    x_api_key: str | None = Header(
+        default=None
     )
 ):
+
+    # ========================================================
+    # API KEY CHECK
+    # ========================================================
+
+    if not API_KEY:
+
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "error",
+                "message": "API authentication is not configured.",
+                "Developer": "daruldark"
+            }
+        )
+
+    if x_api_key != API_KEY:
+
+        return JSONResponse(
+            status_code=401,
+            content={
+                "status": "rejected",
+                "message": "Valid API key required.",
+                "Developer": "daruldark"
+            }
+        )
+
 
     # ========================================================
     # DATABASE VALIDATION
@@ -206,8 +245,6 @@ async def lookup(
     # ========================================================
     # NUMBER VALIDATION
     # ========================================================
-
-    number = number.strip()
 
     if (
         not number
@@ -236,15 +273,15 @@ async def lookup(
 
 
     # ========================================================
-    # SEARCH DATABASE
+    # DATABASE SEARCH
     # ========================================================
 
     try:
 
         query = """
-            SELECT *
+            SELECT 1
             FROM read_parquet(?)
-            WHERE CAST("Number" AS VARCHAR) = ?
+            WHERE "Number" = ?
             LIMIT 1
         """
 
@@ -256,16 +293,11 @@ async def lookup(
             ]
         )
 
-        columns = [
-            description[0]
-            for description in result.description
-        ]
-
         row = result.fetchone()
 
 
         # ====================================================
-        # NOT FOUND
+        # NUMBER NOT FOUND
         # ====================================================
 
         if row is None:
@@ -275,25 +307,25 @@ async def lookup(
                 content={
                     "status": "not_found",
                     "database": selected_database["name"],
-                    "database_file": selected_database["file"],
                     "matched": False,
+                    "message": "No matching authorized record found.",
                     "Developer": "daruldark"
                 }
             )
 
 
         # ====================================================
-        # SAFE RESPONSE
+        # CLEAN SAFE RESPONSE
         #
-        # Do NOT return the actual personal-record values.
+        # No personal-record fields are returned.
+        # No database column names are returned.
         # ====================================================
 
         return {
             "status": "success",
             "database": selected_database["name"],
-            "database_file": selected_database["file"],
             "matched": True,
-            "columns_available": columns,
+            "message": "Authorized record found.",
             "Developer": "daruldark"
         }
 
@@ -304,7 +336,10 @@ async def lookup(
 
     except Exception as error:
 
-        print("DATABASE ERROR:", error)
+        print(
+            "Database operation failed:",
+            str(error)
+        )
 
         return JSONResponse(
             status_code=500,
@@ -322,7 +357,6 @@ async def lookup(
 
 if __name__ == "__main__":
 
-    import os
     import uvicorn
 
     port = int(
